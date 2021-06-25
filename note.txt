@@ -1,0 +1,173 @@
+/**
+* @description       : This Apex class used to calculate the consent in contact profile record and created the consent history record 
+* @author            : Yasir Sheriff (sheriffyasir@praintl.com)
+* @group             :
+* @last modified on  : 03-JUNE-2021
+* @last modified by  : Yasir Sheriff (sheriffyasir@praintl.com)
+* Modifications Log
+* Ver   Date         Author                                    Modification
+* 1.0
+*/
+
+/**
+    * @description  : Default Constructor
+    * @author       : Yasir Sheriff
+    * @date         : Created: 03-JUNE-2021
+    * @Param        :
+    * @Return Type  : 
+    */
+
+
+    /**
+    * @description  : Public method used to set the Contactabilty vallue
+    * @author       : Yasir Sheriff
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Email Consent and Type of Event(Insert | Update)
+    * @Return Type  : Void
+    */
+
+/**
+    * @description  : Public method used to Create the Consent History
+    * @author       : Yasir Sheriff
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Consent Value and ContableValue from Account (EmailConsent, EmailContacble | SmsConsent, SmsContactable)
+    * @Return Type  : Boolean
+    */
+
+ /**
+    * @description  : Public method used to Create the Consent History
+    * @author       : Yasir Sheriff
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Account List
+    * @Return Type  : Void
+    */
+
+
+    /**
+    * @description  : Public method used to set Consent Change Value
+    * @author       : Arivarasan Udhayasuriyan
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Old Consent Value and New Consent value from Account (EmailConsent | SmsConsent)
+    * @Return Type  : String
+    */
+
+/**
+    * @description  : Public method used to set Operation Type Value
+    * @author       : Arivarasan Udhayasuriyan
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Old Consent Value and New Consent value from Account (EmailConsent | SmsConsent)
+    * @Return Type  : String
+    */
+
+/**
+    * @description  : Public method used to set Contactable Change Value
+    * @author       : Arivarasan Udhayasuriyan
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Contacatable Value from Account (EmailContable | SMSContactable)
+    * @Return Type  : String
+    */   
+ public Boolean setValueChange(String oldVlaueChange,String newValueChange){
+        Boolean valueChangeValue;
+        if(oldVlaueChange == newValueChange){
+            valueChangeValue = false;
+        }
+        else{
+            valueChangeValue = true;
+        }
+        return valueChangeValue;
+    }
+                c.ValueChange__c = setValueChange(acc.OldMarketingSmsConsent__pc,acc.MarketingSmsConsent__pc);
+
+		c.ValueChange__c = setValueChange(acc.OldMarketingEmailConsent__pc,acc.MarketingEmailConsent__pc));
+
+
+
+fields needed:
+oldconsent oldmail oldemaildate emailcontact
+oldsms oldsms oldsmsdate smscontact
+isedited
+
+
+trigger ConsentHandler on Contact (after insert, after update) {
+    set<Id> AccountIds = new Set<id>();
+    for(Contact c: trigger.new){
+        if (c.MarketingEmailConsent__c == '1' || c.MarketingEmailConsent__c == '2'){
+            c.EmailContactable__c = true;
+            AccountIds.add(c.AccountId);
+        }
+        if(c.MarketingSmsConsent__c == '1'||c.MarketingSmsConsent__c == '2'){
+            c.SmsContactable__c=true;
+            AccountIds.add(c.AccountId);
+        }
+        if (c.MarketingEmailConsent__c == '9'){
+            c.EmailContactable__c=false;
+            AccountIds.add(c.AccountId);
+        }
+        if(c.MarketingSmsConsent__c == '9'){
+            c.SmsContactable__c=false;
+            AccountIds.add(c.AccountId);
+        }
+    }
+    List<Account> acc = [select Name from Account where Name IN :AccountIds];
+
+    
+}
+
+    /* set<Id> AccountIds = new Set<id>();
+for(Contact c: trigger.new){
+if ((c.MarketingEmailConsent__c == '1'||c.MarketingEmailConsent__c == '2')
+||c.MarketingSmsConsent__c=='1'||c.MarketingSmsConsent__c=='2'){
+AccountIds.add(c.AccountId);  
+}
+}
+List<Account> acc = [select Name from Account where Name IN :AccountIds];
+for(Account a :acc){
+a.Contactable__c= true;
+}
+
+update acc;*/
+
+trigger OrderTrigger on Order (After update) {
+    
+    set<Id> AccountIds = new Set<id>();
+    
+    for(Order o: trigger.new){
+        if (o.Status == 'Activated'){
+            AccountIds.add(o.AccountId);  
+        }
+    }
+    
+    List<contact> contactList = [select Email,AccountId from contact where AccountId IN :AccountIds];
+    Map<Id,list<String>> contactEmailMap = new Map<Id, List<String>>();
+    
+    for(contact co :contactList){
+        if(contactEmailMap.containsKey(co.AccountId)){
+            list<String> emailList = contactEmailMap.get(co.AccountId);
+            emailList.add(co.email);
+            contactEmailMap.put(co.AccountId,emailList);
+        }
+        else{
+            list<String> emailList = new List<String>();
+            emailList.add(co.email);
+            contactEmailMap.put(co.AccountId,emailList);
+        }
+    }
+    
+    List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
+    
+    for(Order o : trigger.new){
+        if (o.Status == 'Activated'){
+            List<String> SendEmailList = contactEmailMap.get(o.AccountId);
+            
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+            
+            mail.setToAddresses(SendEmailList);
+            mail.setSubject('A Order summary is created.');
+            
+            String body = 'Order Number : \n'+o.OrderNumber+ '\n Order Bill Date: \n'+o.CreatedDate ;
+            mail.setHtmlBody(body);
+            mails.add(mail);
+        }
+    }
+    Messaging.sendEmail(mails);
+}

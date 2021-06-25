@@ -1,0 +1,257 @@
+email
+sms
+consent 
+name 
+
+insert
+sms
+email
+
+
+/**
+* @description       : This Apex class used to calculate the consent in contact profile record and created the consent history record 
+* @author            : Yasir Sheriff (sheriffyasir@praintl.com)
+* @group             :
+* @last modified on  : 03-JUNE-2021
+* @last modified by  : Yasir Sheriff (sheriffyasir@praintl.com)
+* Modifications Log
+* Ver   Date         Author                                    Modification
+* 1.0
+*/
+public class ConsentHandler {
+
+    /**
+    * @description  : Default Constructor
+    * @author       : Yasir Sheriff
+    * @date         : Created: 03-JUNE-2021
+    * @Param        :
+    * @Return Type  : 
+    */
+    public ConsentHandler() {
+    }
+
+    /**
+    * @description  : Public method used to set the Contactabilty vallue
+    * @author       : Yasir Sheriff
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Email Consent and Type of Event(Insert | Update)
+    * @Return Type  : Void
+    */
+    public void setEmailContactibility (List<Account> emailConsentList, string eventChange){
+
+        Set<id> accountIdSet = new Set<id>();
+        map<string,ConsentHistory__c> consentHistoryMap = new map<string,ConsentHistory__c>();
+
+        //Iterating over Account which is present in emailConsentList
+        For(Account acc: emailConsentList){
+            accountIdSet.add(acc.id);
+        }
+
+        List<ConsentHistory__c>  consentHistoryList = [select id,ContactProfile__c,NewValue__c,NewConsent__c,NewContactable__c,Timestamp__c,type__c FROM ConsentHistory__c WHERE ContactProfile__c IN :accountIdSet ORDER BY Name ASC NULLS LAST];
+
+        //Iterating over Consent History which id is in accountIdset
+        for(ConsentHistory__c con : consentHistoryList){
+            string typeString = con.ContactProfile__c +'-'+con.type__c;
+            consentHistoryMap.put(typeString, con);
+        }
+
+        //Iterating over Account which id is in emailconsentList
+        For(Account acc: emailConsentList){
+
+            //Checking for changes in Email Consent and Email
+            if(acc.OldMarketingEmailConsent__pc != acc.MarketingEmailConsent__pc ||
+                acc.OldEmail__pc != acc.PersonEmail){
+                acc.EmailContactable__pc = setContactable(acc.MarketingEmailConsent__pc,  acc.EmailContactable__pc);
+
+                //Chceking for the event whether is Update or Insert
+                if(eventChange == 'Update'){
+                    ConsentHistory__c consentHistory = consentHistoryMap.get(acc.id+'-Email');
+
+                    //Chceking for the whether the account has related Consent history ot not
+                    if(consentHistory != null){
+                        acc.OldMarketingEmailConsent__pc = consentHistory?.NewConsent__c;
+                        acc.OldEmailContactable__pc = consentHistory?.NewContactable__c;
+                        acc.OldEmail__pc = consentHistory?.NewValue__c;
+                        acc.OldMarketingEmailConsentDate__pc = consentHistory?.Timestamp__c;
+                    }                
+                }
+            }
+
+            //Checking for changes in Sms Consent and PersonMobilePhone
+            if(acc.OldMarketingSmsConsent__pc != acc.MarketingSmsConsent__pc ||
+                acc.OldPhone__pc != acc.PersonMobilePhone){
+                acc.SmsContactable__pc = setContactable(acc.MarketingSmsConsent__pc, acc.SmsContactable__pc);
+
+                //Chceking for the event whether is Update or Insert
+                if(eventChange == 'Update'){
+                    ConsentHistory__c consentHistory = consentHistoryMap.get(acc.id+'-SMS');
+
+                    //Chceking for the whether the account has related Consent history ot not
+                    if(consentHistory != null){
+                        acc.OldMarketingSmsConsent__pc = consentHistory?.NewConsent__c;
+                        acc.OldSmsContactable__pc = consentHistory?.NewContactable__c;
+                        acc.OldPhone__pc = consentHistory?.NewValue__c;
+                        acc.OldMarketingSmsConsentDate__pc = consentHistory?.Timestamp__c;  
+                    }              
+                }
+            }
+        }
+    }
+
+    /**
+    * @description  : Public method used to set Contactable Value
+    * @author       : Yasir Sheriff
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Consent Value and ContableValue from Account (EmailConsent, EmailContacble | SmsConsent, SmsContactable)
+    * @Return Type  : Boolean
+    */
+    public boolean setContactable(String consentvalue, Boolean contactableValue){
+        Boolean setContactable = contactableValue;
+
+        //Conditions to determine the Contacble Value
+        if(consentvalue == '1' || consentvalue == '2'){
+            setContactable = true;
+        }
+        else if(consentvalue == '9'){
+            setContactable = false;
+        }
+        return setContactable;
+    }
+
+    /**
+    * @description  : Public method used to Create the Consent History
+    * @author       : Yasir Sheriff
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : list<account> consentList
+    * @Return Type  : Void
+    */
+    public void generateConsentHistory(list<account> consentList) {
+        //Initilize the consentHistoryList for ConsentHistory object
+        List<ConsentHistory__c>  consentHistoryList = new List<ConsentHistory__c>();
+        for(Account acc : consentList){
+
+            //Email Consent history created 
+            if(acc.OldMarketingEmailConsent__pc != acc.MarketingEmailConsent__pc){
+                //ConsentHistory Sobject Initialization
+                ConsentHistory__c c = new ConsentHistory__c();
+                c.ContactProfile__c = acc.id;
+                c.SourceSystem__c = acc.SourceSystemUpdate__pc;
+                c.NewValue__c = acc.PersonEmail;
+                c.NewConsent__c = acc.MarketingEmailConsent__pc;
+                c.NewContactable__c = acc.EmailContactable__pc;
+                c.OldConsent__c = acc.OldMarketingEmailConsent__pc;
+                c.OldContactable__c = acc.OldEmailContactable__pc;
+                c.OldValue__c = acc.OldEmail__pc;
+                c.Timestamp__c = acc.MarketingEmailConsentDate__pc;
+                c.Type__c = 'Email'; 
+                c.ConsentChange__c = setConsentChange(acc.OldMarketingEmailConsent__pc,acc.MarketingEmailConsent__pc); 
+                c.OperationType__c = setOperationType(acc.OldMarketingEmailConsent__pc,acc.MarketingEmailConsent__pc);
+                c.ContactableChange__c = setContactableChange(acc.EmailContactable__pc);
+                consentHistoryList.add(c);
+            }  
+
+            //SMS Consent History created
+            if(acc.OldMarketingSmsConsent__pc != acc.MarketingSmsConsent__pc){
+                ConsentHistory__c c = new ConsentHistory__c();
+                c.ContactProfile__c = acc.id;
+                c.SourceSystem__c = acc.SourceSystemUpdate__pc;
+                c.NewValue__c = acc.PersonMobilePhone;
+                c.NewConsent__c = acc.MarketingSmsConsent__pc;
+                c.NewContactable__c = acc.SmsContactable__pc; 
+                c.OldConsent__c = acc.OldMarketingSmsConsent__pc;  	
+                c.OldContactable__c = acc.OldSmsContactable__pc;  
+                c.OldValue__c = acc.OldPhone__pc;
+                c.Timestamp__c = acc.MarketingSMSConsentDate__pc;
+                c.Type__c = 'SMS'; 
+                c.ConsentChange__c = setConsentChange(acc.OldMarketingSmsConsent__pc,acc.MarketingSmsConsent__pc); 
+                c.OperationType__c = setOperationType(acc.OldMarketingSmsConsent__pc,acc.MarketingSmsConsent__pc);
+                c.ContactableChange__c = setContactableChange(acc.SmsContactable__pc);
+                consentHistoryList.add(c);
+            }
+
+            
+        }
+
+        //DML Insert Operations
+        Database.insert(consentHistoryList);
+    }
+
+    /**
+    * @description  : Public method used to set Consent Change Value
+    * @author       : Arivarasan Udhayasuriyan
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Old Consent Value and New Consent value from Account (EmailConsent | SmsConsent)
+    * @Return Type  : String
+    */
+    public String setConsentChange(String oldConsent,String newConsent){
+        String consentChangeValue; 
+
+        //Conditions to determine the ConsentChange Value
+        if((oldConsent == null && newConsent == '0') || (oldConsent == '0' && newConsent == '0')
+            || (oldConsent == null && newConsent == '10') || (oldConsent == '10' && newConsent == '10')){            
+                consentChangeValue = 'UNCHANGED';
+        }
+        else if((oldConsent == null && newConsent == '1') || (oldConsent == null && newConsent == '2')
+        || (oldConsent == '0' && newConsent == '1') || (oldConsent == '0' && newConsent == '2')
+        || (oldConsent == '9' && newConsent == '1') || (oldConsent == '9' && newConsent == '2')
+        || (oldConsent == '10' && newConsent == '1') || (oldConsent == '10' && newConsent == '2')){
+            consentChangeValue = 'OPT_IN';
+        }
+        else if((oldConsent == '1' && newConsent == '1') || (oldConsent == '1' && newConsent == '2')
+        || (oldConsent == '2' && newConsent == '1') || (oldConsent == '2' && newConsent == '2')){
+            consentChangeValue = 'OPT_IN_AGAIN';
+        }
+        else if((oldConsent == null && newConsent == '9') || (oldConsent == '0' && newConsent == '9')
+        || (oldConsent == '1' && newConsent == '9') || (oldConsent == '2' && newConsent == '9')
+        || (oldConsent == '10' && newConsent == '9')){
+            consentChangeValue = 'OPT_OUT';
+        }
+        else if(oldConsent == '9' && newConsent == '9'){
+            consentChangeValue = 'OPT_OUT_AGAIN';
+        } 
+        return consentChangeValue;
+    }
+
+   /**
+    * @description  : Public method used to set Operation Type Value
+    * @author       : Arivarasan Udhayasuriyan
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Old Consent Value and New Consent value from Account (EmailConsent | SmsConsent)
+    * @Return Type  : String
+    */
+    public String setOperationType(String oldVlaue,String newValue){
+        String operationTypeValue;
+
+         //Conditions to determine the OpertaionType Value
+        if(oldVlaue == null && newValue != null){
+            operationTypeValue = 'Is Created';
+        }
+        else if(oldVlaue != newValue){
+            operationTypeValue = 'Is Updated';
+        }
+        else{
+            operationTypeValue = 'Unchanged';
+        }
+        return operationTypeValue;
+    }
+
+    /**
+    * @description  : Public method used to set Contactable Change Value
+    * @author       : Arivarasan Udhayasuriyan
+    * @date         : Created: 03-JUNE-2021
+    * @Param        : Contacatable Value from Account (EmailContable | SMSContactable)
+    * @Return Type  : String
+    */
+    public String setContactableChange(Boolean contactbale){
+        String contactbaleChangeValue;
+
+        //Conditions to determine the Contacblechange Value
+        if(contactbale){
+            contactbaleChangeValue = 'Contactable';
+        }
+        else{
+            contactbaleChangeValue = 'Not Contactable';
+        }
+        return contactbaleChangeValue;
+    }
+}

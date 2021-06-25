@@ -1,0 +1,200 @@
+
+/**
+* @description       : This Apex class is a Test class and is used test the ConsentManagment part 
+* @author            : Arivarasan U (arivarasan.udhayasuriyan@springfive.com)
+* @group             :
+* @last modified on  : 04-JUNE-2021
+* @last modified by  : Arivarasan U (arivarasan.udhayasuriyan@springfive.com)
+* Modifications Log
+* Ver   Date         Author                                    Modification
+* 1.0
+*/
+@IsTest
+public with sharing class ConsentHandlerTest{
+
+    /**
+    * @description  : Public method to test the Consenthandler
+    * @author       : Arivarasan
+    * @date         : Created: 04-JUNE-2021
+    * @Param        : 
+    * @Return Type  : 
+    */
+    @IsTest
+    static void testConsentManagment()
+    {
+        Account newAcc = TestDataFactory.createAccount('Test 1', 'a@gmail.com', '8742333443', '9');
+        Account updatedAcc = TestDataFactory.updateEmail(newAcc.Id,'a@gmail.com', '2');
+        
+    }
+ 
+}
+
+/**
+* @description       : This Apex class is a Test class and is used as a Data fatory to create and update Account 
+* @author            : Arivarasan U (arivarasan.udhayasuriyan@springfive.com)
+* @group             :
+* @last modified on  : 04-JUNE-2021
+* @last modified by  : Arivarasan U (arivarasan.udhayasuriyan@springfive.com)
+* Modifications Log
+* Ver   Date         Author                                    Modification
+* 1.0
+*/
+@isTest
+public class TestDataFactory {
+    
+    /**
+    * @description  : Public method to insert value into the Account
+    * @author       : Arivarasan
+    * @date         : Created: 04-JUNE-2021
+    * @Param        : String name, String mail, String phone, String consent
+    * @Return Type  : Account
+    */
+    public static Account createAccount(String name, String mail, String phone, String consent ) {
+        
+        Id dlpRecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByName().get('DLP').getRecordTypeId();
+        Account acc = new Account(FirstName = 'Test', LastName = name, RecordTypeId = dlpRecordTypeId, SourceSystemUpdate__pc = 'Guest Profile', 
+                                   PersonEmail = mail, MarketingEmailConsent__pc = consent, MarketingEmailConsentDate__pc = System.now(), 
+                                   PersonMobilePhone = phone, MarketingSmsConsent__pc = consent, MarketingSMSConsentDate__pc = System.now());
+        insert acc;        
+        return acc;
+    }
+    
+    /**
+    * @description  : Public method to update user's email related value into the Account
+    * @author       : Arivarasan
+    * @date         : Created: 04-JUNE-2021
+    * @Param        : Id accountId, String mail, String consent
+    * @Return Type  : Account
+    */
+    public static Account updateEmail(Id accountId,String mail, String consent) {       
+        Account updatedAccount = [select FirstName,LastName,PersonEmail,MarketingEmailConsent__pc,MarketingEmailConsentDate__pc
+                               		from Account where id = :accountId];
+        updatedAccount.PersonEmail = mail;
+        updatedAccount.MarketingEmailConsent__pc = consent;
+        update updatedAccount; 
+        return updatedAccount;
+    }
+    
+    /**
+    * @description  : Public method to update user's SMS related value into the Account
+    * @author       : Arivarasan
+    * @date         : Created: 04-JUNE-2021
+    * @Param        : Id accountId, String phone, String consent
+    * @Return Type  : Account
+    */
+    public static Account updatePhone(Id accountId,String phone, String consent) {   
+        Account updatedAccount = [select FirstName, LastName, PersonMobilePhone, MarketingSmsConsent__pc,
+                                  MarketingSMSConsentDate__pc
+                               	  from Account where id = :accountId];
+        updatedAccount.PersonMobilePhone = phone;
+        updatedAccount.MarketingSmsConsent__pc = consent;
+        update updatedAccount; 
+        return updatedAccount;
+    }
+}
+
+Account acct = TestDataFactory.createAccount('Test 1', 'a@gmail.com', '8742333445', '2');
+        Account acct1 = TestDataFactory.createAccount('Test 2', 'b@gmail.com', '8742333446', '9');
+        acct.MarketingEmailConsent__pc = '9';
+        update acct;
+        acct.PersonEmail = 'c@gmail.com';
+        update acct;
+        acct1.MarketingSmsConsent__pc = '9';
+        update acct1;
+        acct1.MarketingSmsConsent__pc = '9';
+        update acct1;
+        Account acct3 = TestDataFactory.createAccount('Test 3', 'b@gmail.com', '8742333446', '10');
+        acct3.MarketingEmailConsent__pc ='2';
+        update acct3;
+        Account acct4 = TestDataFactory.createAccount('Test 4', 'd@gmail.com', '8742333443', '1');
+        acct4.MarketingEmailConsent__pc ='9';
+        update acct4;
+        acct4.MarketingEmailConsent__pc ='1';
+        update acct4;
+        acct4.MarketingEmailConsent__pc ='1';
+        update acct4;
+		
+		   Account acct1 = TestDataFactory.createAccount('Test 1', 'a@gmail.com', '8742333443', '1');
+        Account acct2 = TestDataFactory.createAccount('Test 2', 'b@gmail.com', '8742333445', '2');
+        
+        Account acct4 = TestDataFactory.createAccount('Test 4', 'd@gmail.com', '8742333446', '10');
+        Account acct5 = TestDataFactory.createAccount('Test 5', 'e@gmail.com', '8742333447', '0');
+        acct1.MarketingEmailConsent__pc = '9';
+        acct1.PersonEmail = 'a1@gmail.com';
+        update acct1;
+        acct4.MarketingEmailConsent__pc = '2';
+        update acct4;
+		
+		
+		
+		@isTest
+public class TestDataFactory {
+    public static List<Account> createAccount(String mail, String phone) {
+      
+        Id dlpRecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByName().get('DLP').getRecordTypeId();
+        List<Account> newAccounts = new List<Account>();
+        Account acc1 = new Account(FirstName = 'Test', LastName = 'Consent1', RecordTypeId = dlpRecordTypeId, SourceSystemUpdate__pc = 'Guest Profile', 
+                                PersonEmail = mail, MarketingEmailConsent__pc = '1', MarketingEmailConsentDate__pc = System.now(), 
+                                PersonMobilePhone = phone, MarketingSmsConsent__pc = '1', MarketingSMSConsentDate__pc = System.now());
+        newAccounts.add(acc1);
+        Account acc2 = new Account(FirstName = 'Test', LastName = 'Consent2', RecordTypeId = dlpRecordTypeId, SourceSystemUpdate__pc = 'Guest Profile', 
+                                PersonEmail = mail, MarketingEmailConsent__pc = '10', MarketingEmailConsentDate__pc = System.now(), 
+                                PersonMobilePhone = phone, MarketingSmsConsent__pc = '10', MarketingSMSConsentDate__pc = System.now());
+        newAccounts.add(acc2);
+        Account acc3 = new Account(FirstName = 'Test', LastName = 'Consent3', RecordTypeId = dlpRecordTypeId, SourceSystemUpdate__pc = 'Guest Profile', 
+                                PersonEmail = mail, MarketingEmailConsent__pc = '0', MarketingEmailConsentDate__pc = System.now(), 
+                                PersonMobilePhone = phone, MarketingSmsConsent__pc = '0', MarketingSMSConsentDate__pc = System.now());
+        newAccounts.add(acc3);
+        insert newAccounts;        
+        return newAccounts;
+    }
+    
+    public static List<Account> updateAccount(String mail, String phone) {       
+        List<Account> updatedAccount = new List<Account>();
+        Account accToUpdate = [select FirstName,LastName,PersonEmail,MarketingEmailConsent__pc,MarketingEmailConsentDate__pc,
+                               PersonMobilePhone,MarketingSmsConsent__pc,MarketingSMSConsentDate__pc
+                               from Account where LastName = 'Consent2'];
+        accToUpdate.PersonEmail = mail;
+        accToUpdate.MarketingEmailConsent__pc = '2';
+        accToUpdate.PersonMobilePhone = phone;
+        accToUpdate.MarketingSmsConsent__pc = '2';
+        updatedAccount.add(accToUpdate);
+        
+        Account accToUpdate1 = [select FirstName,LastName,PersonEmail,MarketingEmailConsent__pc,MarketingEmailConsentDate__pc,
+                               PersonMobilePhone,MarketingSmsConsent__pc,MarketingSMSConsentDate__pc
+                               from Account where LastName = 'Consent1'];
+        accToUpdate1.PersonEmail = mail;
+        accToUpdate1.MarketingEmailConsent__pc = '9';
+        accToUpdate1.PersonMobilePhone = phone;
+        accToUpdate1.MarketingSmsConsent__pc = '9';
+        updatedAccount.add(accToUpdate1);
+        
+        update updatedAccount;        
+        return updatedAccount;
+    }
+}
+
+/**
+ * @description :- This Apex class used Test the ConsendHandler Apex class
+ * @Author :- Arivarasan Udhayasuriyan
+ * @Modified Date :- 03/07/2021
+ * @usage :- Testing,
+ */
+@IsTest
+public with sharing class ConsentHandlerTest{
+
+    /**
+     * @description This method used to check the contacability value
+     * 
+     */
+    @IsTest
+    static void testContactibility()
+    {
+        //Account acc = TestDataFactory.createAccount('Test 1', 'a@gmail.com', '8742333443', '1');  
+        List<Account> acc1 = TestDataFactory.createAccount('a@gmail.com', '8742333443');
+        List<Account> upacc1 = TestDataFactory.updateAccount('b@gmail.com', '8742333443');
+       
+        //0 1 2 3 9 10
+    }
+ 
+}

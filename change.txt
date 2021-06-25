@@ -1,0 +1,12 @@
+
+
+Anonymous Flag           - in __c should be in __pc
+Audience Market (Code)   - TEXT(DRPZone__c) but currently TEXT(AudienceMarket__c) 
+Contcatable	     	 - type is Checkbox - but currently in formula
+Country Code (Ciblage)   - should be in pc but in c/ type should be text(255) but in picklist
+Email Hard Bounce Flag   - no value in index
+First Event              - no object
+Golden Answer #1         - in contact but should not be/ should be __c but in __pc
+Golden Answer #2         - in contact but should not be
+Golden Answer #3 	 - in both contact and account but should not be
+Golden Answer #4	 - in both contact and account but should not be
